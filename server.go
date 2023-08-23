@@ -20,6 +20,8 @@ func main() {
 		log.Fatal(err)
 	}
 	defer database.CloseMongo()
+	// connecting to Redis
+	database.RedisConnectDb(&loadConfig)
 	// new instance of fiber
 	app := fiber.New()
 	// setting up URIs routes

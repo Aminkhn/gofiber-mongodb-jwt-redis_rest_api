@@ -2,7 +2,6 @@ package router
 
 import (
 	handlers "github.com/aminkhn/mongo-rest-api/handlers"
-	"github.com/aminkhn/mongo-rest-api/middlewares"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -24,13 +23,13 @@ func SetupRoutes(app *fiber.App) {
 	auth := api.Group("/auth")
 	auth.Post("/login", handlers.Login)
 
-	// User
+	// User , middlewares.Protected()
 	user := api.Group("/user")
 	user.Get("/", handlers.GetAllUser)
 	user.Get("/:id", handlers.GetUser)
 	user.Post("/", handlers.CreateUser)
-	user.Put("/:id", middlewares.Protected(), handlers.UpdateUser)
-	user.Patch("/:id", middlewares.Protected(), handlers.UpdateUser)
+	user.Put("/:id", handlers.UpdateUserPut)
+	user.Patch("/:id", handlers.UpdateUserPatch)
 	user.Delete("/:id", handlers.DeleteUser)
 	/*
 		// Product

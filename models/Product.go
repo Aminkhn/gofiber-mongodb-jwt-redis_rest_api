@@ -1,13 +1,17 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type Product struct {
-	ID           string `json:"_id"`
+	ID           primitive.ObjectID `json:"id" bson:"_id"`
 	CreatedAt    time.Time
-	Title        string `json:"title"`
-	Description  string `json:"description"`
-	Amount       int    `json:"amount"`
-	SerialNumber string `json:"serial_number"`
+	Title        string `json:"title" bson:"title"`
+	Description  string `json:"description" bson:"description"`
+	Amount       int    `json:"amount" bson:"amount"`
+	SerialNumber string `json:"serial_number" bson:"serial_number"`
 	OrderID      uint
 }

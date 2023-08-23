@@ -72,7 +72,7 @@ func GetAllUser(c *fiber.Ctx) error {
 		}
 		users = append(users, user)
 	}
-	// return employees list in JSON format
+	// return users list in JSON format
 	return c.Status(200).JSON(fiber.Map{
 		"data": users,
 	})
@@ -125,7 +125,7 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	// force MongoDB to always set its own generated ObjectIDs
-	user.ID = ""
+	user.ID = primitive.NewObjectID()
 	// hash password for security
 	hash, err := hashPassword(user.Password)
 	if err != nil {
@@ -145,19 +145,19 @@ func CreateUser(c *fiber.Ctx) error {
 	filter := bson.D{{Key: "_id", Value: insertionResult.InsertedID}}
 	createdRecord := collection.FindOne(c.Context(), filter)
 
-	// decode the Mongo record into Employee
+	// decode the Mongo record into user
 	createdUsers := &models.User{}
 	createdRecord.Decode(createdUsers)
 
-	// return the created Employee in JSON format
+	// return the created user in JSON format
 	return c.Status(201).JSON(fiber.Map{
 		"message": "success",
 		"data":    createdUsers,
 	})
 }
 
-// UpdateUser update user
-func UpdateUser(c *fiber.Ctx) error {
+// upsateUser update user put
+func UpdateUserPut(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	userID, err := primitive.ObjectIDFromHex(idParam)
 
@@ -176,7 +176,7 @@ func UpdateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	// Find the employee and update its data
+	// Find the user and update its data
 	query := bson.D{{Key: "_id", Value: userID}}
 	update := bson.D{
 		{Key: "$set",
@@ -202,11 +202,62 @@ func UpdateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	// return the updated employee
-	user.ID = idParam
+	// return the updated user
 	return c.Status(200).JSON(fiber.Map{
 		"message": "success",
 		"data":    user,
+	})
+}
+
+// UpdateUser update user patch
+func UpdateUserPatch(c *fiber.Ctx) error {
+	idParam := c.Params("id")
+	userID, err := primitive.ObjectIDFromHex(idParam)
+
+	// the provided ID might be invalid ObjectID
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	user := new(models.User)
+	// Parse body into struct
+	if err := c.BodyParser(user); err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	// Find the user and update its data
+	query := bson.D{{Key: "_id", Value: userID}}
+	update := bson.D{
+		{Key: "$set",
+			Value: bson.D{
+				{Key: "name", Value: user.Name},
+				{Key: "family", Value: user.Family},
+				{Key: "username", Value: user.Username},
+				{Key: "email", Value: user.Email},
+			},
+		},
+	}
+	err = database.GetDBCollection("users").FindOneAndUpdate(c.Context(), query, update).Err()
+
+	if err != nil {
+		// ErrNoDocuments means that the filter did not match any documents in the collection
+		if err == mongo.ErrNoDocuments {
+			return c.Status(404).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+		return c.Status(500).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	// return the updated user
+	return c.Status(200).JSON(fiber.Map{
+		"message": "success",
 	})
 }
 
@@ -233,7 +284,7 @@ func DeleteUser(c *fiber.Ctx) error {
 		})
 	}
 
-	// the employee might not exist
+	// the user might not exist
 	if result.DeletedCount < 1 {
 		return c.Status(404).JSON(fiber.Map{
 			"error": err.Error(),

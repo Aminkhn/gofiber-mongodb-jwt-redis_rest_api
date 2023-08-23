@@ -11,6 +11,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -56,10 +57,10 @@ func Login(c *fiber.Ctx) error {
 		Password string `json:"password"`
 	}
 	type UserData struct {
-		ID       string `json:"id"`
-		Username string `json:"username"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		ID       primitive.ObjectID `json:"id"`
+		Username string             `json:"username"`
+		Email    string             `json:"email"`
+		Password string             `json:"password"`
 	}
 	input := new(LoginInput)
 	var userData UserData
