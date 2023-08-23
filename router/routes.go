@@ -2,6 +2,7 @@ package router
 
 import (
 	handlers "github.com/aminkhn/mongo-rest-api/handlers"
+	"github.com/aminkhn/mongo-rest-api/middlewares"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -22,10 +23,11 @@ func SetupRoutes(app *fiber.App) {
 	// Auth
 	auth := api.Group("/auth")
 	auth.Post("/login", handlers.Login)
+	//auth.Post("/logout", handlers.Logout)
 
-	// User , middlewares.Protected()
+	// User , middlewares.DeserializeUser()
 	user := api.Group("/user")
-	user.Get("/", handlers.GetAllUser)
+	user.Get("/", middlewares.DeserializeUser, handlers.GetAllUser)
 	user.Get("/:id", handlers.GetUser)
 	user.Post("/", handlers.CreateUser)
 	user.Put("/:id", handlers.UpdateUserPut)
@@ -36,14 +38,14 @@ func SetupRoutes(app *fiber.App) {
 		product := api.Group("/product")
 		product.Get("/", handlers.GetAllProducts)
 		product.Get("/:id", handlers.GetProduct)
-		product.Post("/", middlewares.Protected(), handlers.CreateProduct)
-		product.Delete("/:id", middlewares.Protected(), handlers.DeleteProduct)
+		product.Post("/", middlewares.DeserializeUser(), handlers.CreateProduct)
+		product.Delete("/:id", middlewares.DeserializeUser(), handlers.DeleteProduct)
 		// Order
 
 			order := api.Group("/order")
 			order.Get("/", handlers.GetAllOrders)
 			order.Get("/:id", handlers.GetOrder)
-			order.Post("/", middlewares.Protected(), handlers.CreateOrder)
-			order.Delete("/:id", middlewares.Protected(), handlers.DeleteOrder)
+			order.Post("/", middlewares.DeserializeUser(), handlers.CreateOrder)
+			order.Delete("/:id", middlewares.DeserializeUser(), handlers.DeleteOrder)
 	*/
 }

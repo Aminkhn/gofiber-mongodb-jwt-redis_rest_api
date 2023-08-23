@@ -19,7 +19,7 @@ func hashPassword(password string) (string, error) {
 	return string(bytes), err
 }
 
-func validToken(t *jwt.Token, id string) bool {
+func ValidToken(t *jwt.Token, id string) bool {
 	n, err := strconv.Atoi(id)
 	if err != nil {
 		return false
@@ -31,7 +31,7 @@ func validToken(t *jwt.Token, id string) bool {
 	return uid == n
 }
 
-func validUser(id string, p string) bool {
+func ValidUser(id string, p string) bool {
 	db := database.GetDBCollection("users")
 	filter := bson.D{{Key: "_id", Value: id}}
 

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/mail"
 	"time"
 
@@ -99,12 +100,56 @@ func Login(c *fiber.Ctx) error {
 	claims := token.Claims.(jwt.MapClaims)
 	claims["username"] = userData.Username
 	claims["user_id"] = userData.ID
-	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+	claims["exp"] = time.Now().Add(time.Hour * 15).Unix()
 
 	t, err := token.SignedString([]byte(config.Config("SECRET")))
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
+	err = database.RedisDb.Db.Set(t, fmt.Sprintf("%d", userData.ID), 0).Err()
+	if err != nil {
+		panic(err)
+	}
+	c.Cookie(&fiber.Cookie{
+		Name:        "access_token",
+		Value:       t,
+		Path:        "/",
+		Domain:      "localhost",
+		MaxAge:      15 * 60,
+		Expires:     time.Time{},
+		Secure:      false,
+		HTTPOnly:    true,
+		SameSite:    "",
+		SessionOnly: false,
+	})
 
 	return c.JSON(fiber.Map{"status": "success", "message": "Success login", "data": t})
 }
+
+/*
+func Logout(c *fiber.Ctx) error {
+	access_token_uuid := c.Locals("access_token_uuid").(string)
+	_, err = database.RedisDb.Db.Del(c, tokenClaims.TokenUuid, access_token_uuid).Result()
+	if err != nil {
+		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"status": "fail", "message": err.Error()})
+	}
+
+	expired := time.Now().Add(-time.Hour * 24)
+	c.Cookie(&fiber.Cookie{
+		Name:    "access_token",
+		Value:   "",
+		Expires: expired,
+	})
+	c.Cookie(&fiber.Cookie{
+		Name:    "refresh_token",
+		Value:   "",
+		Expires: expired,
+	})
+	c.Cookie(&fiber.Cookie{
+		Name:    "logged_in",
+		Value:   "",
+		Expires: expired,
+	})
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success"})
+}
+*/

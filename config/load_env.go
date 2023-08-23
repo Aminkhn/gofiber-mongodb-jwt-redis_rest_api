@@ -11,7 +11,8 @@ type Configuration struct {
 	// jwt secret
 	Secret string `mapstructure:"SECRET"`
 	// Server Port
-	Port string `mapstructure:"SERVER_PORT"`
+	ServerUrl  string `mapstructure:"SERVER_PORT"`
+	ServerPort string `mapstructure:"SERVER_PORT"`
 }
 
 func LoadConfig(path string) (config Configuration, err error) {

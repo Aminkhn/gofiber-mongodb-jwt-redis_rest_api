@@ -27,5 +27,5 @@ func main() {
 	// setting up URIs routes
 	router.SetupRoutes(app)
 	// staring webserver
-	app.Listen(":" + loadConfig.Port)
+	app.Listen(":" + loadConfig.ServerPort)
 }
