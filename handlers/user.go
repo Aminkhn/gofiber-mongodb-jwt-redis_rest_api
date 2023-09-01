@@ -1,51 +1,15 @@
 package handlers
 
 import (
-	"strconv"
-
 	"github.com/aminkhn/mongo-rest-api/database"
+	"github.com/aminkhn/mongo-rest-api/logic"
 	"github.com/aminkhn/mongo-rest-api/models"
-	"github.com/golang-jwt/jwt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/gofiber/fiber/v2"
 )
-
-func hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	return string(bytes), err
-}
-
-func ValidToken(t *jwt.Token, id string) bool {
-	n, err := strconv.Atoi(id)
-	if err != nil {
-		return false
-	}
-
-	claims := t.Claims.(jwt.MapClaims)
-	uid := int(claims["user_id"].(float64))
-
-	return uid == n
-}
-
-func ValidUser(id string, p string) bool {
-	db := database.GetDBCollection("users")
-	filter := bson.D{{Key: "_id", Value: id}}
-
-	var result models.User
-	db.FindOne(nil, filter).Decode(&result)
-
-	if result.Username == "" {
-		return false
-	}
-	if !CheckPasswordHash(p, result.Password) {
-		return false
-	}
-	return true
-}
 
 func GetAllUser(c *fiber.Ctx) error {
 	query := bson.M{}
@@ -82,7 +46,11 @@ func GetAllUser(c *fiber.Ctx) error {
 func GetUser(c *fiber.Ctx) error {
 	// get id by params
 	params := c.Params("id")
-
+	if params == "" {
+		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "user id is missing!",
+		})
+	}
 	_id, err := primitive.ObjectIDFromHex(params)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
@@ -107,14 +75,6 @@ func GetUser(c *fiber.Ctx) error {
 
 // CreateUser new user
 func CreateUser(c *fiber.Ctx) error {
-	type NewUser struct {
-		Name     string `json:"name"`
-		Family   string `json:"family"`
-		Username string `json:"username"`
-		Password string `json:"password"`
-		Email    string `json:"email"`
-	}
-
 	collection := database.GetDBCollection("users")
 
 	// New User struct
@@ -127,7 +87,7 @@ func CreateUser(c *fiber.Ctx) error {
 	// force MongoDB to always set its own generated ObjectIDs
 	user.ID = primitive.NewObjectID()
 	// hash password for security
-	hash, err := hashPassword(user.Password)
+	hash, err := logic.HashPassword(user.Password)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Couldn't hash password", "data": err})
 	}
@@ -148,6 +108,7 @@ func CreateUser(c *fiber.Ctx) error {
 	// decode the Mongo record into user
 	createdUsers := &models.User{}
 	createdRecord.Decode(createdUsers)
+	createdUsers.Password = ""
 
 	// return the created user in JSON format
 	return c.Status(201).JSON(fiber.Map{
@@ -158,9 +119,19 @@ func CreateUser(c *fiber.Ctx) error {
 
 // upsateUser update user put
 func UpdateUserPut(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	userID, err := primitive.ObjectIDFromHex(idParam)
-
+	// get id by params
+	params := c.Params("id")
+	if params == "" {
+		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "user id is missing!",
+		})
+	}
+	userID, err := primitive.ObjectIDFromHex(params)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
 	// the provided ID might be invalid ObjectID
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{
@@ -211,8 +182,14 @@ func UpdateUserPut(c *fiber.Ctx) error {
 
 // UpdateUser update user patch
 func UpdateUserPatch(c *fiber.Ctx) error {
-	idParam := c.Params("id")
-	userID, err := primitive.ObjectIDFromHex(idParam)
+	// get id by params
+	params := c.Params("id")
+	if params == "" {
+		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "user id is missing!",
+		})
+	}
+	userID, err := primitive.ObjectIDFromHex(params)
 
 	// the provided ID might be invalid ObjectID
 	if err != nil {
@@ -263,9 +240,19 @@ func UpdateUserPatch(c *fiber.Ctx) error {
 
 // DeleteUser delete user
 func DeleteUser(c *fiber.Ctx) error {
-	userID, err := primitive.ObjectIDFromHex(
-		c.Params("id"),
-	)
+	// get id by params
+	params := c.Params("id")
+	if params == "" {
+		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "user id is missing!",
+		})
+	}
+	userID, err := primitive.ObjectIDFromHex(params)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
 
 	// the provided ID might be invalid ObjectID
 	if err != nil {

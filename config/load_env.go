@@ -8,7 +8,7 @@ type Configuration struct {
 	DBName string `mapstructure:"DB_NAME"`
 	// Redis Setup
 	RedisUrl string `mapstructure:"REDIS_URL"`
-	// jwt secret
+	// jwt
 	Secret string `mapstructure:"SECRET"`
 	// Server Port
 	ServerUrl  string `mapstructure:"SERVER_PORT"`

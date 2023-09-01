@@ -2,25 +2,21 @@ package handlers
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"net/mail"
+	"strings"
 	"time"
 
 	"github.com/aminkhn/mongo-rest-api/config"
 	"github.com/aminkhn/mongo-rest-api/database"
+	"github.com/aminkhn/mongo-rest-api/logic"
 	"github.com/aminkhn/mongo-rest-api/models"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"golang.org/x/crypto/bcrypt"
 )
-
-// CheckPasswordHash compare password with hash
-func CheckPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
-}
 
 func getUserByEmail(e string) (*models.User, error) {
 	db := database.GetDBCollection("users")
@@ -91,8 +87,14 @@ func Login(c *fiber.Ctx) error {
 		}
 	}
 
-	if !CheckPasswordHash(pass, userData.Password) {
+	if !logic.CheckPasswordHash(pass, userData.Password) {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"status": "error", "message": "Invalid password", "data": nil})
+	}
+
+	// loading Env variables
+	loadConfig, err := config.LoadConfig("./")
+	if err != nil {
+		log.Fatal("can not load Envirnment variables", err)
 	}
 
 	token := jwt.New(jwt.SigningMethodHS256)
@@ -100,56 +102,40 @@ func Login(c *fiber.Ctx) error {
 	claims := token.Claims.(jwt.MapClaims)
 	claims["username"] = userData.Username
 	claims["user_id"] = userData.ID
-	claims["exp"] = time.Now().Add(time.Hour * 15).Unix()
+	claims["exp"] = time.Now().Add(time.Minute * 15).Unix()
 
-	t, err := token.SignedString([]byte(config.Config("SECRET")))
+	t, err := token.SignedString([]byte(loadConfig.Secret))
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
-	err = database.RedisDb.Db.Set(t, fmt.Sprintf("%d", userData.ID), 0).Err()
-	if err != nil {
-		panic(err)
-	}
-	c.Cookie(&fiber.Cookie{
-		Name:        "access_token",
-		Value:       t,
-		Path:        "/",
-		Domain:      "localhost",
-		MaxAge:      15 * 60,
-		Expires:     time.Time{},
-		Secure:      false,
-		HTTPOnly:    true,
-		SameSite:    "",
-		SessionOnly: false,
-	})
 
 	return c.JSON(fiber.Map{"status": "success", "message": "Success login", "data": t})
 }
 
-/*
 func Logout(c *fiber.Ctx) error {
-	access_token_uuid := c.Locals("access_token_uuid").(string)
-	_, err = database.RedisDb.Db.Del(c, tokenClaims.TokenUuid, access_token_uuid).Result()
-	if err != nil {
-		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"status": "fail", "message": err.Error()})
-	}
+	reqToken := c.Get("Authorization")
+	splitToken := strings.Split(reqToken, "Bearer ")
+	if len(splitToken) == 2 {
+		reqToken = splitToken[1]
+		claims := jwt.MapClaims{}
+		// loading Env variables
+		loadConfig, err := config.LoadConfig("./")
+		if err != nil {
+			log.Fatal("can not load Envirnment variables", err)
+		}
+		token, err := jwt.ParseWithClaims(reqToken, claims, func(token *jwt.Token) (interface{}, error) {
+			return []byte(loadConfig.Secret), nil
+		})
+		if err != nil {
+			return c.Status(fiber.StatusNotAcceptable).JSON(fiber.Map{"error": err.Error()})
+		}
+		userId := claims["user_id"]
 
-	expired := time.Now().Add(-time.Hour * 24)
-	c.Cookie(&fiber.Cookie{
-		Name:    "access_token",
-		Value:   "",
-		Expires: expired,
-	})
-	c.Cookie(&fiber.Cookie{
-		Name:    "refresh_token",
-		Value:   "",
-		Expires: expired,
-	})
-	c.Cookie(&fiber.Cookie{
-		Name:    "logged_in",
-		Value:   "",
-		Expires: expired,
-	})
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success"})
+		_, err = database.RedisDb.Db.Set(userId.(string), token.Raw, time.Hour*1).Result()
+		if err != nil {
+			return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{"status": "fail", "message": err.Error()})
+		}
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{"status": "success"})
+	}
+	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "fail", "message": "token is missing"})
 }
-*/
