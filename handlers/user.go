@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"time"
+
 	"github.com/aminkhn/mongo-rest-api/database"
 	"github.com/aminkhn/mongo-rest-api/logic"
 	"github.com/aminkhn/mongo-rest-api/models"
@@ -86,13 +88,15 @@ func CreateUser(c *fiber.Ctx) error {
 
 	// force MongoDB to always set its own generated ObjectIDs
 	user.ID = primitive.NewObjectID()
+	// creation time set to Now
+	user.CreatedAt = time.Now()
 	// hash password for security
 	hash, err := logic.HashPassword(user.Password)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Couldn't hash password", "data": err})
 	}
-
 	user.Password = hash
+
 	// insert the record
 	insertionResult, err := collection.InsertOne(c.Context(), user)
 	if err != nil {

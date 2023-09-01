@@ -14,5 +14,4 @@ type User struct {
 	Password  string             `json:"password" bson:"password"`
 	Email     string             `json:"email" bson:"email"`
 	CreatedAt time.Time
-	Orders    []Order `json:"orders" bson:"orders"`
 }

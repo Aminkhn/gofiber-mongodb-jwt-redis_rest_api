@@ -20,7 +20,6 @@ To get an overview of the user model:
 	Password  string             `json:"password" bson:"password"`
 	Email     string             `json:"email" bson:"email"`
 	CreatedAt time.Time
-	Orders    []Order            `json:"orders" bson:"orders"`
 }
 ```
 ## API Reference
@@ -71,7 +70,15 @@ Here is an example of the input data structure to create a user:
 ```
 Here is an example of a user's output data structure:
 ```json
-
+{
+  "id": "64f2480a33d5061ff203633f",
+  "name": "John",
+  "family": "Doe",
+  "username": "JoDoe",
+  "password": "***Hashed password***",
+  "email": "JoDoe@gmail.com",
+  "CreatedAt": "2023-09-01T20:22:34.046Z"
+}
 ```
 
 - #### operations with id parameter
