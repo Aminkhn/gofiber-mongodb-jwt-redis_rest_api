@@ -10,7 +10,7 @@ import (
 )
 
 // SetupRoutes setup router api
-func SetupRoutes(app *fiber.App, c *fiber.Ctx) {
+func SetupRoutes(app *fiber.App) {
 	// Middleware
 	app.Use(logger.New())
 	app.Use(recover.New())

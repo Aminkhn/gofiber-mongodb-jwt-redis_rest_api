@@ -9,7 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func Server(c *fiber.Ctx) {
+func Server() {
 	// loading Env variables
 	loadConfig, err := config.LoadConfig("./")
 	if err != nil {
@@ -25,7 +25,7 @@ func Server(c *fiber.Ctx) {
 	// new instance of fiber
 	app := fiber.New()
 	// setting up URIs routes
-	router.SetupRoutes(app, c)
+	router.SetupRoutes(app)
 	// staring webserver
 	app.Listen(":" + loadConfig.ServerPort)
 }
