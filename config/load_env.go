@@ -2,6 +2,7 @@ package config
 
 import "github.com/spf13/viper"
 
+// struct obj for env setting
 type Configuration struct {
 	// DataBase Setup
 	DBHost string `mapstructure:"DB_URI"`
@@ -15,6 +16,7 @@ type Configuration struct {
 	ServerPort string `mapstructure:"SERVER_PORT"`
 }
 
+// Loads Env file content
 func LoadConfig(path string) (config Configuration, err error) {
 	viper.AddConfigPath(path)
 	viper.SetConfigType("env")

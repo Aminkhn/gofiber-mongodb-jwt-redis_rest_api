@@ -23,6 +23,7 @@ func Protected() fiber.Handler {
 	})
 }
 
+// jwt error handler
 func jwtError(c *fiber.Ctx, err error) error {
 	if err.Error() == "Missing or malformed JWT" {
 		return c.Status(fiber.StatusBadRequest).

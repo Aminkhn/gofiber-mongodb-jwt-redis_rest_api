@@ -11,7 +11,7 @@ import (
 
 // SetupRoutes setup router api
 func SetupRoutes(app *fiber.App) {
-	// Middleware
+	// General Middlewares
 	app.Use(logger.New())
 	app.Use(recover.New())
 	app.Use(cors.New())
@@ -25,26 +25,16 @@ func SetupRoutes(app *fiber.App) {
 	auth.Post("/login", handlers.Login)
 	auth.Post("/logout", middlewares.Protected(), handlers.Logout)
 
-	// User , middlewares.DeserializeUser()
-	user := api.Group("/user", middlewares.IsBlackListed)
-	user.Get("/", middlewares.Protected(), handlers.GetAllUser)
-	user.Get("/:id", middlewares.Protected(), handlers.GetUser)
-	user.Post("/", middlewares.Protected(), handlers.CreateUser)
-	user.Put("/:id", middlewares.Protected(), handlers.UpdateUserPut)
-	user.Patch("/:id", middlewares.Protected(), handlers.UpdateUserPatch)
-	user.Delete("/:id", middlewares.Protected(), handlers.DeleteUser)
-
-	// Product
-	//product := api.Group("/product")
-	//product.Get("/", handlers.GetAllProducts)
-	//product.Get("/:id", handlers.GetProduct)
-	//product.Post("/", middlewares.DeserializeUser(), handlers.CreateProduct)
-	//product.Delete("/:id", middlewares.DeserializeUser(), handlers.DeleteProduct)
-	// Order
-	//order := api.Group("/order")
-	//order.Get("/", handlers.GetAllOrders)
-	//order.Get("/:id", handlers.GetOrder)
-	//order.Post("/", middlewares.DeserializeUser(), handlers.CreateOrder)
-	//order.Delete("/:id", middlewares.DeserializeUser(), handlers.DeleteOrder)
-
+	// User
+	user := api.Group("/user")
+	// Protection
+	user.Use(middlewares.Protected())
+	user.Use(middlewares.IsBlackListed)
+	// User CRUD
+	user.Get("/", handlers.GetAllUser)
+	user.Get("/:id", handlers.GetUser)
+	user.Post("/", handlers.CreateUser)
+	user.Put("/:id", handlers.UpdateUserPut)
+	user.Patch("/:id", handlers.UpdateUserPatch)
+	user.Delete("/:id", handlers.DeleteUser)
 }

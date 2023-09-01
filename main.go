@@ -5,5 +5,6 @@ import (
 )
 
 func main() {
+	// Call app server
 	app.Server()
 }

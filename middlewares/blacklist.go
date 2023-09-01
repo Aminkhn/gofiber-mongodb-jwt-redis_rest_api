@@ -10,7 +10,7 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-// check if passed token exist in blacklist
+// checks if passed token exist in blacklist
 func IsBlackListed(c *fiber.Ctx) error {
 	reqToken := c.Get("Authorization")
 	splitToken := strings.Split(reqToken, "Bearer ")
@@ -31,7 +31,7 @@ func IsBlackListed(c *fiber.Ctx) error {
 		userId := claims["user_id"].(string)
 
 		blacListed, err := database.RedisDb.Db.Get(userId).Result()
-		if err != nil {
+		if err != nil && err.Error() != "redis: nil" {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Problem with Redis reading blacklist", "data": err.Error()})
 		}
 		if blacListed == reqToken {

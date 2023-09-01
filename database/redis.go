@@ -15,13 +15,16 @@ var (
 	RedisDb RedisDbInstance
 )
 
-// ping pong error check
+// Establishing Redis Connection
 func RedisConnectDb(config *config.Configuration) {
 	rdb := redis.NewClient(&redis.Options{
-		Addr: config.RedisUrl,
-		DB:   15,
+		Addr:         config.RedisUrl,
+		Password:     "", // no password set
+		DB:           0,  // use default DB
+		ReadTimeout:  -1,
+		WriteTimeout: -1,
 	})
-	// checking Redis Connection
+	// ping pong error check
 	pong, err := rdb.Ping().Result()
 	if err != nil {
 		log.Fatal("Somethig is wrong with Redis!")

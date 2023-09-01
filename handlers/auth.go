@@ -18,6 +18,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// Finds user by Email and returns User
 func getUserByEmail(e string) (*models.User, error) {
 	db := database.GetDBCollection("users")
 	var user models.User
@@ -30,6 +31,7 @@ func getUserByEmail(e string) (*models.User, error) {
 	return &user, nil
 }
 
+// Finds user by Username and returns User
 func getUserByUsername(u string) (*models.User, error) {
 	db := database.GetDBCollection("users")
 	var user models.User
@@ -42,12 +44,13 @@ func getUserByUsername(u string) (*models.User, error) {
 	return &user, nil
 }
 
+// Checks if input is Email or not
 func isEmail(email string) bool {
 	_, err := mail.ParseAddress(email)
 	return err == nil
 }
 
-// Login gets user and password
+// Login gets user and password and gives JWT token
 func Login(c *fiber.Ctx) error {
 	type LoginInput struct {
 		Identity string `json:"identity"`
@@ -112,6 +115,7 @@ func Login(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"status": "success", "message": "Success login", "data": t})
 }
 
+// logout adds JWT token in blacklist
 func Logout(c *fiber.Ctx) error {
 	reqToken := c.Get("Authorization")
 	splitToken := strings.Split(reqToken, "Bearer ")
