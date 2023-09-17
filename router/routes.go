@@ -17,7 +17,7 @@ func SetupRoutes(app *fiber.App) {
 	app.Use(cors.New())
 
 	// API Health Checker
-	api := app.Group("/api", logger.New())
+	api := app.Group("/api")
 	api.Get("/HealthChecker", handlers.HealthChecker)
 
 	// Auth
